@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Club;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
@@ -11,6 +12,7 @@ use Tymon\JWTAuth\Exceptions\JWTException;
 
 use App\Models\User;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
 
 class AuthenticationApi extends Controller
 {
@@ -29,14 +31,31 @@ class AuthenticationApi extends Controller
         $user = User::where('email', $request->email)->first();
 
         if(! $user){
-            return response()->json(["message" => "Email incorreto"]);
+            return response()->json(["message" => "Email incorreto"],401);
         }
 
         if(! Hash::check($request->password, $user->password)){
-            return response()->json(["message" => "Password incorreto!"]);
+            return response()->json(["message" => "Password incorreto!"], 401);
 
         }
 
+        if($user->active==0){
+            return response()->json(["message" => "Entre em contato com um ADM e solicite a liberação do seu cadastro."], 402);
+        }
+
+        if($user->active==2){
+            return response()->json(["message" => "Você foi banido!!! Entre em contato com um ADM e solicite a liberação do seu cadastro."], 402);
+        }
+
+        $menusFormatoArray = [];
+        $menus=explode(",", $user->menuIds);
+
+        $userFormatado = $user;
+
+        unset($userFormatado->menuIds);
+        $userFormatado->menuIds = $menus;
+
+        //dd($userFormatado);
         //$token = $user->createToken($request->email.strtotime("now"))->plainTextToken;
         //dd($request);
         $credentials = $request->only('email', 'password');
@@ -47,27 +66,55 @@ class AuthenticationApi extends Controller
         return response()->json([
             "access_token" => $token,
             "token_type" => 'bearer',
-            "user" => $user,
+            "user" => $userFormatado,
             //'expires_in' => auth()->factory()->getTTL() * 60
+        ], 200);
+
+    }
+
+
+    public function registerClub(Request $request){
+        $validator = Validator::make($request->all(), [
+            'user_id' => 'required',
+            'clubName' => 'required|string|max:255',
+
         ]);
 
+        if($validator->fails()){
+                return response()->json($validator->errors()->toJson(), 401);
+        }
+
+        //dd($request->all());
+
+
+        $user = Club::create([
+            'name' => $request->get('clubName'),
+            'user_id' => $request->get('user_id'),
+        ]);
     }
 
     public function register(Request $request){
 
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
+            'username' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:6|confirmed',
+            'password' => 'required|string|min:6',
+            'whatsapp' => 'required|string|max:255|unique:users',
         ]);
 
         if($validator->fails()){
-                return response()->json($validator->errors()->toJson(), 400);
+                return response()->json($validator->errors()->toJson(), 401);
         }
+
+        //dd($request->all());
+
 
         $user = User::create([
             'name' => $request->get('name'),
+            'username' => $request->get('username'),
             'email' => $request->get('email'),
+            'whatsapp' => $request->get('whatsapp'),
             'password' => Hash::make($request->get('password')),
         ]);
 

@@ -21,7 +21,7 @@ class Permissions extends Seeder
      *
      * @return void
      */
-   
+
         // Reset cached roles and permissions
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
@@ -47,20 +47,26 @@ class Permissions extends Seeder
         $user = \App\Models\User::factory()->create([
             'name' => 'Example User',
             'email' => 'test@example.com',
+            'whatsapp' =>'62992111955',
+            'password' => bcrypt('password')
         ]);
         $user->assignRole($role1);
 
         $user = \App\Models\User::factory()->create([
             'name' => 'Example Admin User',
             'email' => 'admin@example.com',
+            'whatsapp' =>'62992111956',
+            'password' => bcrypt('password')
         ]);
         $user->assignRole($role2);
 
         $user = \App\Models\User::factory()->create([
             'name' => 'Example Super-Admin User',
             'email' => 'superadmin@example.com',
+            'whatsapp' =>'62992111957',
+            'password' => bcrypt('password')
         ]);
         $user->assignRole($role3);
     }
-    
+
 }

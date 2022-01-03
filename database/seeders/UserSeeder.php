@@ -15,8 +15,8 @@ class UserSeeder extends Seeder
     public function run()
     {
         $usuariosHomologacao = [
-            ['name' => 'admin',  'password' => bcrypt('password'), 'email' =>'mendelbsi@gmail.com']
-          
+            ['name' => 'admin', 'username'=>'mendelmariano', 'password' => bcrypt('password'), 'email' =>'mendelbsi@gmail.com', 'whatsapp' =>'62992111954', 'menuIds' =>'1,2', 'active'=>'1']
+
         ];
 
         User::insert($usuariosHomologacao);

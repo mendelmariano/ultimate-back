@@ -8,7 +8,9 @@ use App\Http\Requests\UpdateResultRequest;
 use Illuminate\Http\Request;
 use App\Models\Club;
 use App\Helpers\ResultadoHelper;
-
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class ResultController extends Controller
 {
@@ -23,6 +25,62 @@ class ResultController extends Controller
         return response()->json($result->with(["usuario_casa", "usuario_fora"])->get());
     }
 
+    public function forUserConfirm(Result $result)
+    {
+        $user = Auth::user();
+        $clubsUser = Club::where('user_id', $user->id)->with("user")->get()->toArray();
+        $idClubs = [];
+
+        //dd($clubsUser);
+
+        foreach($clubsUser as $club){
+            //dd($club["id"]);
+            array_push($idClubs, $club["id"]);
+        }
+        //dd($idClubs);
+
+        $results = Result::where('status', 0)
+        ->where(function($query) use ($idClubs){
+            $query->WhereIn('fora_id', $idClubs)
+                ->orWhereIn('casa_id', $idClubs);
+        })
+
+        ->with(["usuario_casa", "usuario_fora"])
+        ->get()->toArray();
+
+
+        return response()->json($results);
+    }
+
+
+
+    public function forUserConfirmed(Result $result)
+    {
+        $user = Auth::user();
+        $clubsUser = Club::where('user_id', $user->id)->with("user")->get()->toArray();
+        $idClubs = [];
+
+        //dd($clubsUser);
+
+        foreach($clubsUser as $club){
+            //dd($club["id"]);
+            array_push($idClubs, $club["id"]);
+        }
+        //dd($idClubs);
+
+        $results = Result::where('status', '>', 0)
+        ->where(function($query) use ($idClubs){
+            $query->WhereIn('fora_id', $idClubs)
+                ->orWhereIn('casa_id', $idClubs);
+        })
+
+        ->with(["usuario_casa", "usuario_fora"])
+        ->get()->toArray();
+
+
+        return response()->json($results);
+    }
+
     /**
      * Show the form for creating a new resource.
      *
@@ -31,7 +89,7 @@ class ResultController extends Controller
     public function create()
     {
         //
-        
+
     }
 
     /**
@@ -43,6 +101,7 @@ class ResultController extends Controller
     public function store(StoreResultRequest $request)
     {
         //
+        Log::info($request->all());
         $newResult = Result::create($request->all());
         return response()->json($newResult, 201);
     }
@@ -53,7 +112,7 @@ class ResultController extends Controller
     {
         //
         $newResult = Result::create($request->all());
-        
+
         return response()->json($newResult, 201);
     }
 
@@ -79,7 +138,7 @@ class ResultController extends Controller
     public function edit(Result $result)
     {
         //
-       
+
     }
 
     /**
@@ -107,12 +166,12 @@ class ResultController extends Controller
         //
         try {
             $result->delete();
-            
+
             return response()->json([
                     'message' => 'Resultado excluído com sucesso!'
             ], 200);
         } catch (\Illuminate\Database\QueryException $e) {
-            \Log::error($e->getMessage());
+            Log::error($e->getMessage());
             return response()->json([
                 'error' =>  "Erro ao excluir resultado."
             ], 500);
@@ -136,11 +195,58 @@ class ResultController extends Controller
                 }else{
                     return response()->json([
                         'message' => 'Seu resultado so pode ser confirmado caso esteja na lista de espera!'
-                    ], 200);   
+                    ], 200);
                 }
 
          } catch (\Illuminate\Database\QueryException $e) {
-                \Log::error($e->getMessage());
+                Log::error($e->getMessage());
+                return response()->json([
+                    'error' =>  "Erro ao confirmar resultado."
+                ], 500);
+    }
+
+    }
+
+    public function computaResultados(Request $request){
+
+        //dd(ResultadoHelper::teste());
+
+        try{
+                //dd($request->ids);
+                $results = Result::whereIn('id', $request->ids)->get();
+                //dd($results);
+                 if($request->tipo == 1 ){
+                     $status = 1;
+                     $message = "Resultados confirmados com sucesso!";
+                 }
+
+                 if($request->tipo == 2 ){
+                    $status = 2;
+                    $message = "Resultados rejeitados com sucesso!";
+                }
+
+                 foreach($results as $result){
+                        //echo "passou";
+                        //dd($result->status);
+                        if($result->status == 0){
+
+
+                        $resultadoHelper = new ResultadoHelper();
+                        $resultadoHelper->computaResultado($result);
+                        $result->status = $status;
+                        $result->save();
+
+
+                        }
+                    }
+                    return response()->json([
+                        'message' => $message
+                    ], 200);
+            }
+
+
+          catch (\Illuminate\Database\QueryException $e) {
+                Log::error($e->getMessage());
                 return response()->json([
                     'error' =>  "Erro ao confirmar resultado."
                 ], 500);
@@ -153,14 +259,14 @@ class ResultController extends Controller
         //dd(ResultadoHelper::teste());
 
         try{
-                $result = Result::find($id);               
+                $result = Result::find($id);
                 $result->status = 2;
                 $result->save();
                 return response()->json([
                     'message' => 'Resultado rejeitado com sucesso!'
                 ], 200);
          } catch (\Illuminate\Database\QueryException $e) {
-                \Log::error($e->getMessage());
+                Log::error($e->getMessage());
                 return response()->json([
                     'error' =>  "Erro ao rejeitado resultado."
                 ], 500);
@@ -169,5 +275,5 @@ class ResultController extends Controller
     }
 
 
-    
+
 }
