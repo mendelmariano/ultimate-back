@@ -15,7 +15,7 @@ class UserSeeder extends Seeder
     public function run()
     {
         $usuariosHomologacao = [
-            ['name' => 'admin', 'username'=>'mendelmariano', 'password' => bcrypt('password'), 'email' =>'mendelbsi@gmail.com', 'whatsapp' =>'62992111954', 'menuIds' =>'1,2', 'active'=>'1']
+            ['name' => 'admin', 'username'=>'mendelmariano', 'password' => bcrypt('password'), 'email' =>'mendelbsi@gmail.com', 'whatsapp' =>'62992111954', 'menuIds' =>'1,2,3,4,5,6', 'active'=>'1']
 
         ];
 

@@ -25,7 +25,7 @@ class CreateUsersTable extends Migration
             $table->string('profile_photo_path', 2048)->nullable();
             $table->string('whatsapp')->unique();
             $table->boolean('active')->default(0);
-            $table->string('menuIds')->default("1");
+            $table->string('menuIds')->default("1,3,4,5,6");
             $table->timestamps();
 
         });
